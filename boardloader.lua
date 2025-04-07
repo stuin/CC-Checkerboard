@@ -9,6 +9,7 @@ local gameFormat = {
 	y="Board Height",
 	bColor="Default Background Color",
 	eColor="Board Edge Color",
+	tColor="Title Text Color",
 --Everything below this line is setup automatically
 	turn="Current player index",
 	playing="Is Game Running?",
@@ -21,6 +22,8 @@ local gameFormat = {
 }
 
 --Variables for drawing
+local screenX,screenY = term.getSize()
+local centerX,centerY = screenX/2,screenY/2
 local startX,startY = 1,3
 local gridX,gridY = 0,0
 local monitor = nil
@@ -31,31 +34,10 @@ local function drawCell(x,y,cell)
 	term.blit(cell[1],""..colors.toBlit(cell[3]),""..colors.toBlit(cell[4]))
 end
 
---Game name and current player name
-local function drawHeader(game)
-	--term.clear()
-	term.setCursorPos(1, 1)
-	term.write(game.name)
-
-	if game.turn > 0 and game.turn <= #game.players then
-		local color = term.getTextColor()
-		term.setTextColor(game.players[game.turn].color)
-		term.setCursorPos(1, 2)
-		term.write(game.players[game.turn].name)
-		term.write("'s Turn")
-		term.setTextColor(color)
-	end
-
-	--End buttons
-	term.setCursorPos(1,gridY+startY+3)
-	term.blit(" Restart   Quit  ", "00000000000000000", "555555555 eeeeee ")
-	term.setCursorPos(1,gridY+startY+4)
-end
-
 --Draw entire grid to screen
 local function drawGrid(game)
 	paintutils.drawFilledBox(startX+1,startY+1, gridX+startX-1,gridY+startY-1, game.bColor)
-	paintutils.drawBox(startX,startY, gridX+startX,gridY+startY, game.eColor)
+	paintutils.drawBox(startX,startY, gridX+startX+1,gridY+startY+1, game.eColor)
 
 	for x=1,gridX do
 		for y=1,gridY do
@@ -64,6 +46,32 @@ local function drawGrid(game)
 	end
 
 	term.setCursorPos(1,gridY+startY+2)
+	term.setBackgroundColor(colors.black)
+end
+
+--Game name and current player name
+local function drawHeader(game)
+	--term.clear()
+	term.setBackgroundColor(colors.black)
+	term.setTextColor(game.tColor)
+	term.setCursorPos(centerX-#game.name/2, 1)
+	term.write(game.name)
+	term.setTextColor(colors.white)
+
+	if game.turn > 0 and game.turn <= #game.players then
+		local color = term.getTextColor()
+		local name = game.players[game.turn].name
+		term.setTextColor(game.players[game.turn].color)
+		term.setCursorPos(centerX-(#name+7)/2, 2)
+		term.write(name)
+		term.write("'s Turn")
+		term.setTextColor(color)
+	end
+
+	--End buttons
+	term.setCursorPos(centerX-8,gridY+startY+3)
+	term.blit(" Restart   Quit  ", "00000000000000000", "555555555 eeeeee ")
+	term.setCursorPos(1,gridY+startY+4)
 end
 
 --Get mouse input and verify grid
@@ -73,17 +81,16 @@ local function input(game)
 		eventS = "monitor_touch"
 	end
 	local event, button, mX, mY = os.pullEvent(eventS)
-	local x = mX-startX
-	local y = mY-startY
+	local x,y = mX-startX, mY-startY
 
-	if (mX < 10) and mY == (gridY+startY+3) then
+	if (mX > centerX-9) and (mX < centerX) and mY == (gridY+startY+3) then
 		return 0,-1
-	elseif (mX > 10) and (mX < 17) and mY == (gridY+startY+3) then
+	elseif (mX > centerX+1) and (mX < centerX+7) and mY == (gridY+startY+3) then
 		return 0,-2
-	elseif x > gridX or y > gridY or x < 1 or y < 1 then
-		return 0,0
-	else
+	elseif onBoard(x,y) then
 		return x,y
+	else
+		return 0,0
 	end
 end
 
@@ -139,14 +146,17 @@ function mapBoard(func)
 	end
 end
 
+--Check if coords are inside grid
+function onBoard(x,y)
+	return not (x > gridX or y > gridY or x < 1 or y < 1)
+end
+
 --Setup and play game
 function startGame(game, setupFunc, resetFunc)
-	gridX = game.x
-	gridY = game.y
+	gridX,gridY = game.x,game.y
 
 	--Calculate maximum game board size
-	local maxX = gridX+startX+2
-	local maxY = gridY+startY+3
+	local maxX,maxY = gridX+startX+2, gridY+startY+3
 	if #game.name > maxX then
 		maxX = #game.name
 	end
@@ -159,12 +169,8 @@ function startGame(game, setupFunc, resetFunc)
 	if #monitors > 0 then
 		monitor = monitors[1]
 		monitor.setTextScale(1)
-		local screenX,screenY = monitor.getSize()
-		local scaleX = screenX/maxX
-		local scaleY = screenY/maxY
-		term.write(maxX.." "..maxY.." ")
-		term.write(screenX.." "..screenY.." ")
-		term.write(scaleX.." "..scaleY)
+		screenX,screenY = monitor.getSize()
+		local scaleX,scaleY = screenX/maxX, screenY/maxY
 
 		if scaleX < scaleY then
 			monitor.setTextScale(scaleX)
@@ -172,12 +178,14 @@ function startGame(game, setupFunc, resetFunc)
 			monitor.setTextScale(scaleY)
 		end
 
+		screenX,screenY = monitor.getSize()
+		centerX,centerY = screenX/2, screenY/2
 		term.redirect(monitor)
 	end
 
+	startX = math.floor(centerX-gridX/2-1)
 
 	term.clear()
-	term.setBackgroundColor(game.bColor)
 
 	--Initial variables
 	game.turn = 1
@@ -212,6 +220,7 @@ function startGame(game, setupFunc, resetFunc)
 				resetBoard(game, setupFunc, resetFunc)
 			elseif y == -2 then
 				game.playing = false
+				term.setCursorPos(centerX-2,gridY+startY+2)
 				term.write("Quit")
 				term.setCursorPos(1,gridY+startY+4)
 			end
@@ -223,9 +232,12 @@ function startGame(game, setupFunc, resetFunc)
 			if not game.playing then
 				drawGrid(game)
 				if game.turn == 0 then
+					term.setCursorPos(centerX-5,gridY+startY+2)
 					term.write("It's a Tie ")
 				else
-					term.write(game.players[game.turn].name)
+					local name = game.players[game.turn].name
+					term.setCursorPos(centerX-(#name+7)/2,gridY+startY+2)
+					term.write(name)
 					term.write(" Wins! ")
 				end
 
@@ -235,6 +247,8 @@ function startGame(game, setupFunc, resetFunc)
 					resetBoard(game, setupFunc, resetFunc)
 				else
 					game.playing = false
+					term.setCursorPos(centerX-2,gridY+startY+2)
+					term.clearLine()
 					term.write("Quit")
 					term.setCursorPos(1,gridY+startY+4)
 				end
