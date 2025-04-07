@@ -21,9 +21,9 @@ local gameFormat = {
 }
 
 --Variables for drawing
-local screenX,screenY = term.getSize()
 local startX,startY = 1,3
 local gridX,gridY = 0,0
+local monitor = nil
 
 --Draw single cell to screen
 local function drawCell(x,y,cell)
@@ -45,6 +45,11 @@ local function drawHeader(game)
 		term.write("'s Turn")
 		term.setTextColor(color)
 	end
+
+	--End buttons
+	term.setCursorPos(1,gridY+startY+3)
+	term.blit(" Restart   Quit  ", "00000000000000000", "555555555 eeeeee ")
+	term.setCursorPos(1,gridY+startY+4)
 end
 
 --Draw entire grid to screen
@@ -62,12 +67,20 @@ local function drawGrid(game)
 end
 
 --Get mouse input and verify grid
-local function input()
-	local event, button, mX, mY = os.pullEvent("mouse_click")
+local function input(game)
+	local eventS = "mouse_click"
+	if monitor ~= nil then
+		eventS = "monitor_touch"
+	end
+	local event, button, mX, mY = os.pullEvent(eventS)
 	local x = mX-startX
 	local y = mY-startY
 
-	if x > gridX or y > gridY or x < 1 or y < 1 then
+	if (mX < 10) and mY == (gridY+startY+3) then
+		return 0,-1
+	elseif (mX > 10) and (mX < 17) and mY == (gridY+startY+3) then
+		return 0,-2
+	elseif x > gridX or y > gridY or x < 1 or y < 1 then
 		return 0,0
 	else
 		return x,y
@@ -128,13 +141,45 @@ end
 
 --Setup and play game
 function startGame(game, setupFunc, resetFunc)
+	gridX = game.x
+	gridY = game.y
+
+	--Calculate maximum game board size
+	local maxX = gridX+startX+2
+	local maxY = gridY+startY+3
+	if #game.name > maxX then
+		maxX = #game.name
+	end
+	if 16 > maxX then
+		maxX = 16
+	end
+
+	--Use monitor and set scale
+	local monitors = { peripheral.find("monitor") }
+	if #monitors > 0 then
+		monitor = monitors[1]
+		monitor.setTextScale(1)
+		local screenX,screenY = monitor.getSize()
+		local scaleX = screenX/maxX
+		local scaleY = screenY/maxY
+		term.write(maxX.." "..maxY.." ")
+		term.write(screenX.." "..screenY.." ")
+		term.write(scaleX.." "..scaleY)
+
+		if scaleX < scaleY then
+			monitor.setTextScale(scaleX)
+		else
+			monitor.setTextScale(scaleY)
+		end
+
+		term.redirect(monitor)
+	end
+
+
 	term.clear()
 	term.setBackgroundColor(game.bColor)
 
 	--Initial variables
-	gridX = game.x
-	gridY = game.y
-
 	game.turn = 1
 	game.playing = true
 	game.board = {}
@@ -162,7 +207,15 @@ function startGame(game, setupFunc, resetFunc)
 
 		--Get input
 		local x,y = input()
-		if x ~= 0 then
+		if x == 0 then
+			if y == -1 then
+				resetBoard(game, setupFunc, resetFunc)
+			elseif y == -2 then
+				game.playing = false
+				term.write("Quit")
+				term.setCursorPos(1,gridY+startY+4)
+			end
+		else
 			--Run function from seleted cell
 			game.board[x][y][2](game,x,y)
 
@@ -170,21 +223,20 @@ function startGame(game, setupFunc, resetFunc)
 			if not game.playing then
 				drawGrid(game)
 				if game.turn == 0 then
-					term.write("It's a Tie")
+					term.write("It's a Tie ")
 				else
 					term.write(game.players[game.turn].name)
-					term.write(" Wins!")
+					term.write(" Wins! ")
 				end
 
-				--End buttons
-				term.setCursorPos(1,gridY+startY+3)
-				term.blit(" Restart   Quit ", "0000000000000000", "555555555 eeeeee")
-				term.setCursorPos(1,gridY+startY+4)
-
 				--Replay button
-				local event, button, mX, mY = os.pullEvent("mouse_click")
-				if (mX < 10) and mY == (gridY+startY+3) then
+				local x,y = input()
+				if y == -1 then
 					resetBoard(game, setupFunc, resetFunc)
+				else
+					game.playing = false
+					term.write("Quit")
+					term.setCursorPos(1,gridY+startY+4)
 				end
 			end
 		end
