@@ -1,18 +1,23 @@
-require("boardloader")
+require("cccheckerboard")
 
 --Initial game configuration
 local tictactoe = {
 	name="Tic Tac Toe",
+	version="0.1.0",
+	cccVersion="0.1.0",
 	players={
 		{name='X', color=colors.red, placed=0},
 		{name='O', color=colors.white, placed=0}
 	},
-	x=5,
-	y=5,
-	bColor=colors.black,
-	eColor=colors.black
+	width=5,
+	height=5,
+	backColor=colors.black,
+	edgeColor=colors.black,
+	gridColor=colors.black,
+	titleColor=colors.white
 }
 
+--Check if the player has won or tied
 function checkWin(game, x,y)
 	local turn = game.board[x][y][1]
 
@@ -28,23 +33,23 @@ function checkWin(game, x,y)
 		game.turn = 0
 		game.playing = false
 	end
-
-	nextTurn(game)
 end
 
+--Play in an empty cell
 function play(game, x,y)
 	local placed = game.players[game.turn].placed
 
 	--Place X or O on grid
 	if game.turn == 1 then
-		setPiece(game, x,y, 'X', nullFunc, colors.red, colors.black)
+		game.board[x][y] = {'X', nullFunc, colors.red, colors.black}
 		game.players[game.turn].placed = placed + 1
 	else
-		setPiece(game, x,y, 'O', nullFunc, colors.white, colors.black)
+		game.board[x][y] = {'O', nullFunc, colors.white, colors.black}
 		game.players[game.turn].placed = placed + 1
 	end
 
 	checkWin(game, x,y)
+	nextTurn(game)
 end
 
 --Setup grid lines and empty spaces
@@ -60,6 +65,7 @@ function setupBoard(cell, x,y)
 	end
 end
 
+--Clear player data
 function resetGame(game)
 	for i=1,#game.players do
 		game.players[i].placed = 0
