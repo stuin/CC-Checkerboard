@@ -341,7 +341,7 @@ function startGame(game, setupFunc, resetFunc)
 				setupNetwork(game, modems)
 			end
 		elseif arg[i] == "-u" then
-			shell.run("wget https://github.com/stuin/CC-Checkerboard/blob/main/install.lua")
+			shell.run("wget https://raw.githubusercontent.com/stuin/CC-Checkerboard/refs/heads/main/install.lua")
 			shell.run("install")
 		end
 	end

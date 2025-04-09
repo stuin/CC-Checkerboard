@@ -4,10 +4,10 @@ local files = {
 	"othello.lua"
 }
 
-local git = "https://github.com/stuin/CC-Checkerboard/blob/main/"
+local git = "https://raw.githubusercontent.com/stuin/CC-Checkerboard/refs/heads/main/"
 
 for i = 1,#files do
-	fs.delete(files[i])
+	shell.run("delete "..files[i])
 	shell.run("wget "..git..files[i])
 end
 
