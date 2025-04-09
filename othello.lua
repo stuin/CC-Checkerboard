@@ -3,8 +3,6 @@ require("cccheckerboard")
 --Initial game configuration
 local othello = {
 	name="Othello",
-	version="0.1.0",
-	cccVersion="0.1.0",
 	players={
 		{name='Black', color=colors.gray, placed=2, playColor=colors.black},
 		{name='White', color=colors.white, placed=2, playColor=colors.white}

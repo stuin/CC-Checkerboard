@@ -6,15 +6,22 @@ A lua library for creating small text grid turn based games for the ComputerCraf
 
 - Fully mouse controllable with `Restart` and `Quit` buttons
 - Accepts keyboard control
-	- 'a1' = 1,1 - 'h8' = 8,8
-	- 'R' to Restart game
-	- 'Q' to Quit game
+	- `a1` = 1,1 - `h8` = 8,8
+	- `R` to Restart game
+	- `Q` to Quit game
 - Connects to monitor and resizes to fill screen
-- Add `-m` to args to use modem for multiplayer
+- Supports any number of players per game
+	- Defaults to shared screen that swaps between players
+	- Add `-m` to args to connect to modem
+	- The computer will wait until there are as many computers connected as players in the game
+	- All computers will display the board, only the current player can select a cell
+	- Any player can restart or quit the game for everyone
 - Automatic centering
-- All customizable colors
+- All colors are customizable
 - Move history
 - Single file library
+- Synced random seed
+- Add `-u` to args to update games from git
 - Multiple example games:
 	- Tic Tac Toe
 	- Othello

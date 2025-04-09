@@ -3,8 +3,6 @@ require("cccheckerboard")
 --Initial game configuration
 local tictactoe = {
 	name="Tic Tac Toe",
-	version="0.1.0",
-	cccVersion="0.1.0",
 	players={
 		{name='X', color=colors.red, placed=0},
 		{name='O', color=colors.white, placed=0}

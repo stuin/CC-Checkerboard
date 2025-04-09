@@ -1,8 +1,6 @@
 --Game object format (add more fields as needed)
 local gameFormat = {
 	name="Game Name",
-	version="Game version number",
-	cccVersion="CCCheckerboard engine version",
 	players={{
 		name="Player i Name",
 		color="Player i Color"
@@ -16,6 +14,7 @@ local gameFormat = {
 --Everything below this line is setup automatically
 	turn="Current player index",
 	playing="Is Game Running?",
+	seed="Random number seed",
 	board={{{
 		"Text Character",
 		"Function when selected",
@@ -221,7 +220,7 @@ end
 local function setupNetwork(game, modems)
 	--Start multiplayer setup
 	print("Found modem, setting up multiplayer")
-	protocolName = protocolName.."-"..game.name.."-"..game.version
+	protocolName = protocolName.."-"..game.name
 	print(protocolName)
 	modem = peripheral.getName(modems[1])
 	rednet.open(modem)
@@ -341,6 +340,9 @@ function startGame(game, setupFunc, resetFunc)
 			if #modems > 0 then
 				setupNetwork(game, modems)
 			end
+		elseif arg[i] == "-u" then
+			shell.run("wget https://github.com/stuin/CC-Checkerboard/blob/main/install.lua")
+			shell.run("install")
 		end
 	end
 
@@ -386,6 +388,17 @@ function startGame(game, setupFunc, resetFunc)
 	game.playing = true
 	game.board = {}
 	game.moves = {}
+	game.seed = os.epoch()
+
+	if playerNum == 1 then
+		game.moves[#game.moves+1] = {0,0,0,game.seed}
+		broadcast({0,0,0,game.seed})
+	elseif playerNum ~= 0 then
+		local id, message = rednet.receive(protocolName)
+		game.moves[#game.moves+1] = message
+		game.seed = message[4]
+	end
+	math.randomseed(game.seed)
 
 	--Create board using setup function
 	for x=1,gridX do
