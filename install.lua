@@ -7,8 +7,8 @@ local files = {
 local git = "https://raw.githubusercontent.com/stuin/CC-Checkerboard/refs/heads/main/"
 
 for i = 1,#files do
-	shell.run("delete "..files[i])
+	fs.delete(shell.resolve(files[i]))
 	shell.run("wget "..git..files[i])
 end
 
-fs.delete("install.lua")
+fs.delete(shell.resolve("install.lua"))
