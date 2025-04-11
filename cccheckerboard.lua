@@ -198,37 +198,13 @@ local function input(remote)
 	end
 end
 
---Clear game and board to start
-local function resetBoard(game, setupFunc, resetFunc)
-	term.clear()
-	game.turn = 1
-	game.playing = true
-	game.board = {}
-	game.moves = {}
-	game.seed = os.epoch()
-
-	--Multiplayer distribute seed/start
-	if playerNum == 1 then
-		game.moves[#game.moves+1] = {0,0,0,game.seed}
-		broadcast({0,0,0,game.seed})
-	elseif playerNum ~= 0 then
-		local id, message = rednet.receive(protocolName)
-		game.moves[#game.moves+1] = message
-		game.seed = message[4]
-	end
-	math.randomseed(game.seed)
-
-	--Game specific reset
-	if resetFunc ~= nil then
-		resetFunc(game)
-	end
-
-	--Create board using setup function
-	game.board = {}
-	for x=1,gridX do
-		game.board[x] = {}
-		for y=1,gridY do
-			game.board[x][y] = setupFunc(game, x,y)
+--Send message to all other players
+local function broadcast(message)
+	if playerNum ~= 0 then
+		for i=1,#connections do
+			if i ~= playerNum then
+				rednet.send(connections[i], message, protocolName)
+			end
 		end
 	end
 end
@@ -266,7 +242,7 @@ local function setupNetwork(game, modems)
 
 		--Wait for all players
 		for i=2,#game.players do
-			local id, message = rednet.receive(protocolName, 5+os.getComputerID())
+			local id, message = rednet.receive(protocolName, 10+os.getComputerID())
 			while id == nil do
 				rednet.unhost(protocolName)
 				other = rednet.lookup(protocolName)
@@ -308,13 +284,37 @@ local function setupNetwork(game, modems)
 	end
 end
 
---Send message to all other players
-local function broadcast(message)
-	if playerNum ~= 0 then
-		for i=1,#connections do
-			if i ~= playerNum then
-				rednet.send(connections[i], message, protocolName)
-			end
+--Clear game and board to start
+local function resetBoard(game, setupFunc, resetFunc)
+	term.clear()
+	game.turn = 1
+	game.playing = true
+	game.board = {}
+	game.moves = {}
+	game.seed = os.epoch()
+
+	--Multiplayer distribute seed/start
+	if playerNum == 1 then
+		game.moves[#game.moves+1] = {0,0,0,game.seed}
+		broadcast({0,0,0,game.seed})
+	elseif playerNum ~= 0 then
+		local id, message = rednet.receive(protocolName)
+		game.moves[#game.moves+1] = message
+		game.seed = message[4]
+	end
+	math.randomseed(game.seed)
+
+	--Game specific reset
+	if resetFunc ~= nil then
+		resetFunc(game)
+	end
+
+	--Create board using setup function
+	game.board = {}
+	for x=1,gridX do
+		game.board[x] = {}
+		for y=1,gridY do
+			game.board[x][y] = setupFunc(game, x,y)
 		end
 	end
 end
@@ -402,7 +402,7 @@ function startGame(game, setupFunc, resetFunc)
 		end
 
 		screenX,screenY = monitor.getSize()
-		centerX,centerY = screenX/2, screenY/2
+		centerX,centerY = screenX/2+1, screenY/2+1
 		term.redirect(monitor)
 	end
 
@@ -447,9 +447,7 @@ function startGame(game, setupFunc, resetFunc)
 				game.board[x][y][2](game,x,y)
 
 				--Send to other players
-				if not remote then
-					broadcast({x,y,game.turn,os.epoch()})
-				end
+				broadcast({x,y,game.turn,os.epoch()})
 			end
 
 			--Check for game end
