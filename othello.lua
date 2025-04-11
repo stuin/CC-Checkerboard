@@ -121,7 +121,7 @@ function play(game, x,y)
 end
 
 --Setup starting pieces and empty spaces
-function setupBoard(cell, x,y)
+function setupBoard(game, x,y)
 	if (x==4 and y==4) or (x==5 and y==5) then
 		return {'O', nullFunc, colors.white, colors.green}
 	elseif (x==4 and y==5) or (x==5 and y==4) then

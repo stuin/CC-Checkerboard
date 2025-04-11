@@ -51,7 +51,7 @@ function play(game, x,y)
 end
 
 --Setup grid lines and empty spaces
-function setupBoard(cell, x,y)
+function setupBoard(game, x,y)
 	if (x%2==0) and (y%2==0) then
 		return {'+', nullFunc, colors.gray, colors.black}
 	elseif x%2==0 then

@@ -26,6 +26,12 @@ A lua library for creating small text grid turn based games for the ComputerCraf
 	- Tic Tac Toe
 	- Othello
 
+### Install
+
+```
+wget run https://raw.githubusercontent.com/stuin/CC-Checkerboard/refs/heads/main/install.lua
+```
+
 ### Programming Design
 
 Initial game setup is done with one object and a lambda function to create the initial state for each cell of the grid. A reset function should also be included if there is any custom data included in the game object.

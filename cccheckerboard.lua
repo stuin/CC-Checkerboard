@@ -203,16 +203,33 @@ local function resetBoard(game, setupFunc, resetFunc)
 	term.clear()
 	game.turn = 1
 	game.playing = true
+	game.board = {}
 	game.moves = {}
+	game.seed = os.epoch()
 
-	for x=1,gridX do
-		for y=1,gridY do
-			game.board[x][y] = setupFunc(defaultCell, x,y)
-		end
+	--Multiplayer distribute seed/start
+	if playerNum == 1 then
+		game.moves[#game.moves+1] = {0,0,0,game.seed}
+		broadcast({0,0,0,game.seed})
+	elseif playerNum ~= 0 then
+		local id, message = rednet.receive(protocolName)
+		game.moves[#game.moves+1] = message
+		game.seed = message[4]
 	end
+	math.randomseed(game.seed)
 
+	--Game specific reset
 	if resetFunc ~= nil then
 		resetFunc(game)
+	end
+
+	--Create board using setup function
+	game.board = {}
+	for x=1,gridX do
+		game.board[x] = {}
+		for y=1,gridY do
+			game.board[x][y] = setupFunc(game, x,y)
+		end
 	end
 end
 
@@ -332,21 +349,31 @@ end
 
 --Setup and play game
 function startGame(game, setupFunc, resetFunc)
-	gridX,gridY = game.width,game.height
-
+	--Check command arguments
 	for i=1,#arg do
 		if arg[i] == "-m" and #game.players > 1 then
+			--Enable modem multiplayer
 			local modems = { peripheral.find("modem") }
 			if #modems > 0 then
 				setupNetwork(game, modems)
 			end
+		elseif arg[i] == "-s" and i < #arg and game.maxSize ~= nil then
+			--Adjust board size
+			local s = tonumber(arg[i + 1])
+			i = i + 1
+			if s > game.width and s < game.maxSize then
+				game.height = game.height + (s - game.width)
+				game.width = s
+			end
 		elseif arg[i] == "-u" then
-			shell.run("wget https://raw.githubusercontent.com/stuin/CC-Checkerboard/refs/heads/main/install.lua")
-			shell.run("install")
+			--Download updates from git
+			shell.run("wget run https://raw.githubusercontent.com/stuin/CC-Checkerboard/refs/heads/main/install.lua")
+			return
 		end
 	end
 
 	--Calculate maximum game board size
+	gridX,gridY = game.width,game.height
 	local maxX,maxY = gridX+startX+2, gridY+startY+3
 	if #game.name > maxX then
 		maxX = #game.name
@@ -379,34 +406,11 @@ function startGame(game, setupFunc, resetFunc)
 		term.redirect(monitor)
 	end
 
+	--Center board
 	startX = math.floor(centerX-gridX/2-1)
 
-	term.clear()
-
-	--Initial variables
-	game.turn = 1
-	game.playing = true
-	game.board = {}
-	game.moves = {}
-	game.seed = os.epoch()
-
-	if playerNum == 1 then
-		game.moves[#game.moves+1] = {0,0,0,game.seed}
-		broadcast({0,0,0,game.seed})
-	elseif playerNum ~= 0 then
-		local id, message = rednet.receive(protocolName)
-		game.moves[#game.moves+1] = message
-		game.seed = message[4]
-	end
-	math.randomseed(game.seed)
-
-	--Create board using setup function
-	for x=1,gridX do
-		game.board[x] = {}
-		for y=1,gridY do
-			game.board[x][y] = setupFunc(defaultCell, x,y)
-		end
-	end
+	--Setup game
+	resetBoard(game, setupFunc, resetFunc)
 
 	--Play game
 	while game.playing do

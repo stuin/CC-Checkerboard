@@ -2,9 +2,9 @@
 --Manually converted to lua
 
 local DEFAULT_SIZE = 8
-local BLANK = ' '
-local ZERO = '0'
-local ONE = '1'
+BLANK = '_'
+ZERO = '0'
+ONE = '1'
 
 --Prints out the board
 function print_board(board)
@@ -349,4 +349,7 @@ function main()
   term.write(10-tries)
 end
 
-main()
+
+if run_main == nil then
+  main()
+end
