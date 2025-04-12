@@ -3,7 +3,9 @@ local files = {
 	"tictactoe.lua",
 	"othello.lua",
 	"binario-gen.lua",
-	"binario.lua"
+	"binario.lua",
+	"minesweeper.lua",
+	"checkers.lua"
 }
 
 local git = "https://raw.githubusercontent.com/stuin/CC-Checkerboard/refs/heads/main/"
