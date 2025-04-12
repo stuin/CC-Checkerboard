@@ -21,10 +21,15 @@ A lua library for creating small text grid turn based games for the ComputerCraf
 - Move history
 - Single file library
 - Synced random seed
-- Add `-u` to args to update games from git
+- Board generation at game start or at first move
+- Add `-u` to args to install updates from git
+- `gamelist -m` to wait for any multiplayer game and join
 - Multiple example games:
 	- Tic Tac Toe
+	- Checkers
 	- Othello
+	- Minesweeper
+	- Binario
 
 ### Install
 
@@ -55,7 +60,7 @@ local othello = {
 	titleColor=colors.green
 }
 
-function setupBoard(cell, x,y)
+function othello.setupFunc(game, x,y)
 	if (x==4 and y==4) or (x==5 and y==5) then
 		return {'O', nullFunc, colors.white, colors.green}
 	elseif (x==4 and y==5) or (x==5 and y==4) then
@@ -65,14 +70,15 @@ function setupBoard(cell, x,y)
 	end
 end
 
-function resetGame(game)
+--Clear player data
+function othello.resetFunc(game)
 	for i=1,#game.players do
-		game.players[i].placed = 0
+		game.players[i].placed = 2
 	end
 end
 
 --Start game
-startGame(tictactoe, setupBoard, resetGame)
+startGame(othello)
 ```
 
 Every cell has at minimum a display char, a function to run when the cell is selected, and foreground and background colors.
@@ -80,21 +86,24 @@ Every cell has at minimum a display char, a function to run when the cell is sel
 The run function can be null, the same for all cells, or can be changed along with the other values.
 
 ```
-function play(game, x,y)
-	local placed = game.players[game.turn].placed
-
-	--Place X or O on grid
+local function play(game, x,y)
 	if game.turn == 1 then
-		setPiece(game, x,y, 'X', nullFunc, colors.red, colors.black)
-		game.players[game.turn].placed = placed + 1
+		--Check if move is valid before placing
+		if spread(game, x,y, colors.black) > 0 then
+			game.board[x][y] = {'O', nullFunc, colors.black, colors.green}
+			game.players[game.turn].placed = game.players[game.turn].placed + 1
+			checkWin(game)
+		end
 	else
-		setPiece(game, x,y, 'O', nullFunc, colors.white, colors.black)
-		game.players[game.turn].placed = placed + 1
+		if spread(game, x,y, colors.white) > 0 then
+			game.board[x][y] = {'O', nullFunc, colors.white, colors.green}
+			game.players[game.turn].placed = game.players[game.turn].placed + 1
+			checkWin(game)
+		end
 	end
-
-	checkWin(game, x,y)
-	nextTurn()
 end
 ```
 
 After the selected cell function returns the board is redrawn and a new cell is selected. This can be the same player or the next player depending on if `nextTurn(game)` has been run.
+
+Some games use one input/function to select a piece and highlight all possible destinations, and then a second input is to actually move the piece.

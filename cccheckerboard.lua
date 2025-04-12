@@ -10,6 +10,8 @@ local gameFormat = {
 	edgeColor="Board Edge Color",
 	gridColor="Grid Numbers Color",
 	titleColor="Title Text Color",
+	setupFunc="Function to map each grid space to",
+	resetFunc="Function to run on startup and restart",
 --Everything below this line is setup automatically
 	turn="Current player index",
 	playing="Is Game Running?",
@@ -25,7 +27,7 @@ local gameFormat = {
 	}}
 }
 
-local cccheckerboardVersion="0.1.0"
+cccheckerboardVersion="0.1.0"
 
 --Variables for drawing
 local screenX,screenY = term.getSize()
@@ -284,7 +286,7 @@ local function setupNetwork(game, modems)
 end
 
 --Clear game and board to start
-local function resetBoard(game, setupFunc, resetFunc)
+local function resetBoard(game)
 	term.clear()
 	game.turn = 1
 	game.playing = true
@@ -304,8 +306,8 @@ local function resetBoard(game, setupFunc, resetFunc)
 	math.randomseed(game.seed)
 
 	--Game specific reset
-	if resetFunc ~= nil then
-		resetFunc(game)
+	if game.resetFunc ~= nil then
+		game.resetFunc(game)
 	end
 
 	--Create board using setup function
@@ -313,7 +315,7 @@ local function resetBoard(game, setupFunc, resetFunc)
 	for x=1,gridX do
 		game.board[x] = {}
 		for y=1,gridY do
-			game.board[x][y] = setupFunc(game, x,y)
+			game.board[x][y] = game.setupFunc(game, x,y)
 		end
 	end
 end
@@ -325,6 +327,7 @@ function nullFunc(game, x,y)
 
 end
 
+--List of 8 neighboring positions
 directions = {
 	{-1,-1}, {0,-1}, {1,-1},
 	{-1, 0}, 		 {1, 0},
@@ -353,7 +356,13 @@ function onBoard(x,y)
 end
 
 --Setup and play game
-function startGame(game, setupFunc, resetFunc)
+function startGame(game)
+	--Save game to list
+	if list_game ~= nil then
+		list_game[#list_game + 1] = game
+		return
+	end
+
 	--Check command arguments
 	for i=1,#arg do
 		if arg[i] == "-m" and #game.players > 1 then
@@ -422,7 +431,7 @@ function startGame(game, setupFunc, resetFunc)
 	startX = math.floor(centerX-gridX/2-1)
 
 	--Setup game
-	resetBoard(game, setupFunc, resetFunc)
+	resetBoard(game)
 
 	--Play game
 	while game.playing do
@@ -438,7 +447,7 @@ function startGame(game, setupFunc, resetFunc)
 				if x == 0 then
 					broadcast({-1,y,playerNum,os.epoch()})
 				end
-				resetBoard(game, setupFunc, resetFunc)
+				resetBoard(game)
 				term.setCursorPos(centerX-4,gridY+startY+2)
 				term.write("Restarted")
 			elseif y == -2 then
@@ -483,7 +492,7 @@ function startGame(game, setupFunc, resetFunc)
 					if x == 0 then
 						broadcast({-1,y,playerNum,os.epoch()})
 					end
-					resetBoard(game, setupFunc, resetFunc)
+					resetBoard(game)
 					term.setCursorPos(centerX-4,gridY+startY+2)
 					term.write("Restarted")
 				elseif y == -2 then

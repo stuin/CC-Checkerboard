@@ -19,7 +19,7 @@ local binario = {
 	titleColor=colors.white
 }
 
-function checkWin(game)
+local function checkWin(game)
 	local board = {}
 	for x=1,game.width do
 		board[x] = {}
@@ -34,7 +34,7 @@ function checkWin(game)
 end
 
 --Play in an empty cell
-function play(game, x,y)
+local function play(game, x,y)
 	if game.board[x][y][1] == '_' then
 		game.board[x][y] = {'0', play, colors.white, colors.black}
 		game.blank = game.blank - 1
@@ -51,7 +51,7 @@ function play(game, x,y)
 end
 
 --Setup starting pieces and empty spaces
-function setupBoard(game, x,y)
+function binario.setupFunc(game, x,y)
 	--Assign specific cell
 	local t = game.generated[x][y]
 	if t == BLANK then
@@ -64,7 +64,7 @@ function setupBoard(game, x,y)
 end
 
 --Generate new board
-function resetGame(game)
+function binario.resetFunc(game)
 	local board = nil
 	local tries = 10
 
@@ -88,5 +88,5 @@ function resetGame(game)
 end
 
 --Start game
-startGame(binario, setupBoard, resetGame)
+startGame(binario)
 

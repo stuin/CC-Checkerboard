@@ -15,7 +15,7 @@ local tictactoe = {
 }
 
 --Check if the player has won or tied
-function checkWin(game, x,y)
+local function checkWin(game, x,y)
 	local turn = game.board[x][y][1]
 
 	--Check rows+columns+diagonals for matches
@@ -33,7 +33,7 @@ function checkWin(game, x,y)
 end
 
 --Play in an empty cell
-function play(game, x,y)
+local function play(game, x,y)
 	local placed = game.players[game.turn].placed
 
 	--Place X or O on grid
@@ -50,7 +50,7 @@ function play(game, x,y)
 end
 
 --Setup grid lines and empty spaces
-function setupBoard(game, x,y)
+function tictactoe.setupFunc(game, x,y)
 	if (x%2==0) and (y%2==0) then
 		return {'+', nullFunc, colors.gray, colors.black}
 	elseif x%2==0 then
@@ -63,12 +63,12 @@ function setupBoard(game, x,y)
 end
 
 --Clear player data
-function resetGame(game)
+function tictactoe.resetFunc(game)
 	for i=1,#game.players do
 		game.players[i].placed = 0
 	end
 end
 
 --Start game
-startGame(tictactoe, setupBoard, resetGame)
+startGame(tictactoe)
 

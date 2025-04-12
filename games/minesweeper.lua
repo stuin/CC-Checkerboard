@@ -18,7 +18,7 @@ local minesweeper = {
 }
 
 --Recursively reveal spaces
-function reveal(game, x,y)
+local function reveal(game, x,y)
 	local count = 0
 	game.revealed = game.revealed + 1
 
@@ -55,7 +55,7 @@ function reveal(game, x,y)
 end
 
 --Play in an empty cell
-function play(game, x,y)
+local function play(game, x,y)
 	if game.revealed == -1 then
 		--Generate new board
 		for i=1,game.mines do
@@ -89,16 +89,16 @@ function play(game, x,y)
 end
 
 --Set blank board
-function setupBoard(game, x,y)
+function minesweeper.setupFunc(game, x,y)
 	return {'_', play, colors.white, colors.black, false}
 end
 
 --Clear board data
-function resetGame(game)
+function minesweeper.resetFunc(game)
 	game.mines = game.width * game.height / 6.4
 	game.revealed = -1
 end
 
 --Start game
-startGame(minesweeper, setupBoard, resetGame)
+startGame(minesweeper)
 

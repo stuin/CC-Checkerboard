@@ -15,7 +15,7 @@ local checkers = {
 }
 
 --Check for promotion to Queen
-function checkEnd(game, x,y)
+local function checkEnd(game, x,y)
 	if game.board[x][y][1] == '0' and y == 1 and game.turn == 2 then
 		game.board[x][y][1] = 'Q'
 	elseif game.board[x][y][1] == '0' and y == 8 and game.turn == 1 then
@@ -29,7 +29,7 @@ function checkEnd(game, x,y)
 end
 
 --Move one spot
-function move(game, x,y)
+local function move(game, x,y)
 	local selected = game.players[game.turn].selected
 	game.board[x][y] = game.board[selected[1]][selected[2]]
 	game.board[selected[1]][selected[2]] = {'_', nullFunc, colors.white, colors.gray}
@@ -39,7 +39,7 @@ function move(game, x,y)
 end
 
 --Jump opposing piece
-function jump(game, x,y)
+local function jump(game, x,y)
 	local selected = game.players[game.turn].selected
 	local dx,dy = (selected[1]-x)/2,(selected[2]-y)/2
 	game.board[x][y] = game.board[selected[1]][selected[2]]
@@ -53,7 +53,7 @@ function jump(game, x,y)
 	end
 end
 
-function clearSelect(game, x,y)
+local function clearSelect(game, x,y)
 	if game.board[x][y][1] == '_' and game.board[x][y][2] ~= nullFunc then
 		return {'_', nullFunc, colors.white, colors.gray}
 	end
@@ -61,7 +61,7 @@ function clearSelect(game, x,y)
 end
 
 --Highlight available moves
-function select(game, x,y, capture)
+local function select(game, x,y, capture)
 	local color = game.players[game.turn].playColor
 	local opColor = game.players[(game.turn % #game.players) + 1].playColor
 	local captureFound = false
@@ -109,7 +109,7 @@ function select(game, x,y, capture)
 end
 
 --Setup starting pieces and empty spaces
-function setupBoard(game, x,y)
+function checkers.setupFunc(game, x,y)
 	local white = x%2==y%2
 	if x%2==y%2 then
 		--White space
@@ -124,7 +124,7 @@ function setupBoard(game, x,y)
 end
 
 --Clear player data
-function resetGame(game)
+function checkers.resetFunc(game)
 	for i=1,#game.players do
 		game.players[i].captured = 0
 		game.players[i].selected = {0,0}
@@ -132,5 +132,5 @@ function resetGame(game)
 end
 
 --Start game
-startGame(checkers, setupBoard, resetGame)
+startGame(checkers)
 
