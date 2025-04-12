@@ -14,7 +14,6 @@ local binario = {
 	maxSize=12,
 	generated=nil,
 	blank=0,
-	backColor=colors.gray,
 	edgeColor=colors.black,
 	gridColor=colors.white,
 	titleColor=colors.white
@@ -64,7 +63,7 @@ function setupBoard(game, x,y)
 	end
 end
 
---Clear player data
+--Generate new board
 function resetGame(game)
 	local board = nil
 	local tries = 10

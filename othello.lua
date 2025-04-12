@@ -9,16 +9,9 @@ local othello = {
 	},
 	width=8,
 	height=8,
-	backColor=colors.green,
 	edgeColor=colors.gray,
 	gridColor=colors.green,
 	titleColor=colors.green
-}
-
-local directions = {
-	{-1,-1}, {0,-1}, {1,-1},
-	{-1, 0}, 		 {1, 0},
-	{-1, 1}, {0, 1}, {1, 1}
 }
 
 --Check all lines to convert

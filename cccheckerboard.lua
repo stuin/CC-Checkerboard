@@ -7,7 +7,6 @@ local gameFormat = {
 	}},
 	width="Board Width",
 	height="Board Height",
-	backColor="Default Background Color",
 	edgeColor="Board Edge Color",
 	gridColor="Grid Numbers Color",
 	titleColor="Title Text Color",
@@ -59,7 +58,7 @@ local function drawGrid(game)
 		end
 	end
 	for y=1,gridY do
-		drawCell(0,y, {""..y, nullFunc, game.gridColor, game.edgeColor})
+		drawCell(0,y, {""..(y%10), nullFunc, game.gridColor, game.edgeColor})
 	end
 
 	term.setCursorPos(1,gridY+startY+2)
@@ -326,6 +325,12 @@ function nullFunc(game, x,y)
 
 end
 
+directions = {
+	{-1,-1}, {0,-1}, {1,-1},
+	{-1, 0}, 		 {1, 0},
+	{-1, 1}, {0, 1}, {1, 1}
+}
+
 --Move to next turn
 function nextTurn(game)
 	if game.playing then
@@ -334,10 +339,10 @@ function nextTurn(game)
 end
 
 --Run function on every cell and replace
-function mapBoard(func)
+function mapBoard(game, func)
 	for x=1,gridX do
 		for y=1,gridY do
-			game.board[x][y] = func(game.board[x][y], x,y)
+			game.board[x][y] = func(game, x,y)
 		end
 	end
 end
@@ -356,14 +361,21 @@ function startGame(game, setupFunc, resetFunc)
 			local modems = { peripheral.find("modem") }
 			if #modems > 0 then
 				setupNetwork(game, modems)
+			else
+				print("No modem found for remote multiplayer")
+				return
 			end
 		elseif arg[i] == "-s" and i < #arg and game.maxSize ~= nil then
 			--Adjust board size
 			local s = tonumber(arg[i + 1])
 			i = i + 1
+			if s > game.maxSize then
+				s = game.maxSize
+			end
 			if s > game.width and s < game.maxSize then
 				game.height = game.height + (s - game.width)
 				game.width = s
+				print("Set size to "..s)
 			end
 		elseif arg[i] == "-u" then
 			--Download updates from git

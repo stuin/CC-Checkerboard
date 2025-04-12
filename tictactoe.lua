@@ -9,7 +9,6 @@ local tictactoe = {
 	},
 	width=5,
 	height=5,
-	backColor=colors.black,
 	edgeColor=colors.black,
 	gridColor=colors.black,
 	titleColor=colors.white
