@@ -29,6 +29,11 @@ local gameFormat = {
 
 cccheckerboardVersion="0.1.0"
 
+--Substitute non-computercraft libraries
+if term == nil then
+	require 'ansi-term'
+end
+
 --Variables for drawing
 local screenX,screenY = term.getSize()
 local centerX,centerY = screenX/2,screenY/2
@@ -40,39 +45,51 @@ local monitor = nil
 local modem = nil
 local connections = {}
 local playerNum = 0
-local protocolName = "CCCheckerboard-"..cccheckerboardVersion
+local baseProtocolName = "CCCheckerboard-"..cccheckerboardVersion
+local protocolName = baseProtocolName
 
 --Draw single cell to screen
 local function drawCell(x,y,cell)
 	term.setCursorPos(x+startX, y+startY)
-	term.blit(cell[1],""..colors.toBlit(cell[3]),""..colors.toBlit(cell[4]))
+	term.setTextColor(cell[3])
+	term.setBackgroundColor(cell[4])
+	term.write(cell[1])
 end
 
 --Draw entire grid to screen
 local function drawGrid(game)
-	paintutils.drawFilledBox(startX+1,startY+1, gridX+startX-1,gridY+startY-1, game.backColor)
-	paintutils.drawBox(startX,startY, gridX+startX+1,gridY+startY+1, game.edgeColor)
-
+	--Draw cells and sides
 	for x=1,gridX do
 		drawCell(x,0, {string.char(96+x), nullFunc, game.gridColor, game.edgeColor})
+		drawCell(x,gridY+1, {string.char(96+x), nullFunc, game.gridColor, game.edgeColor})
 		for y=1,gridY do
 			drawCell(x,y, game.board[x][y])
 		end
 	end
+
+	--Draw top and bottom
 	for y=1,gridY do
 		drawCell(0,y, {""..(y%10), nullFunc, game.gridColor, game.edgeColor})
+		drawCell(gridX+1,y, {""..(y%10), nullFunc, game.gridColor, game.edgeColor})
 	end
 
+	--Draw Corners
+	drawCell(0,		  0, 	   {" ", nullFunc, game.gridColor, game.edgeColor})
+	drawCell(gridX+1, 0, 	   {" ", nullFunc, game.gridColor, game.edgeColor})
+	drawCell(0,		  gridY+1, {" ", nullFunc, game.gridColor, game.edgeColor})
+	drawCell(gridX+1, gridY+1, {" ", nullFunc, game.gridColor, game.edgeColor})
+
 	term.setCursorPos(1,gridY+startY+2)
+	term.setTextColor(colors.white)
 	term.setBackgroundColor(colors.black)
 end
 
 --Game name and current player name
 local function drawHeader(game)
 	--term.clear()
+	term.setCursorPos(centerX-#game.name/2, 1)
 	term.setBackgroundColor(colors.black)
 	term.setTextColor(game.titleColor)
-	term.setCursorPos(centerX-#game.name/2, 1)
 	term.write(game.name)
 	term.setTextColor(colors.white)
 
@@ -114,7 +131,15 @@ local function drawHeader(game)
 
 	--End buttons
 	term.setCursorPos(centerX-8,gridY+startY+3)
-	term.blit(" Restart   Quit  ", "00000000000000000", "555555555 eeeeee ")
+	term.setTextColor(colors.white)
+	term.setBackgroundColor(colors.green)
+	term.write(" Restart ")
+	term.setBackgroundColor(colors.black)
+	term.write(" ")
+	term.setBackgroundColor(colors.red)
+	term.write(" Quit ")
+	term.setBackgroundColor(colors.black)
+	term.write(" ")
 	term.setCursorPos(1,gridY+startY+4)
 end
 
@@ -211,12 +236,12 @@ local function broadcast(message)
 end
 
 --Setup multiplayer game
-local function setupNetwork(game, modems)
+local function setupNetwork(game, modemW)
 	--Start multiplayer setup
 	print("Found modem, setting up multiplayer")
-	protocolName = protocolName.."-"..game.name
+	protocolName = baseProtocolName.."-"..game.name
 	print(protocolName)
-	modem = peripheral.getName(modems[1])
+	modem = peripheral.getName(modemW)
 	rednet.open(modem)
 	rednet.unhost(protocolName)
 
@@ -367,9 +392,9 @@ function startGame(game)
 	for i=1,#arg do
 		if arg[i] == "-m" and #game.players > 1 then
 			--Enable modem multiplayer
-			local modems = { peripheral.find("modem") }
-			if #modems > 0 then
-				setupNetwork(game, modems)
+			local modem = peripheral.find("modem")
+			if modem ~= nil then
+				setupNetwork(game, modem)
 			else
 				print("No modem found for remote multiplayer")
 				return
@@ -409,9 +434,9 @@ function startGame(game)
 	end
 
 	--Use monitor and set scale
-	local monitors = { peripheral.find("monitor") }
-	if #monitors > 0 then
-		monitor = monitors[1]
+	local termRedirect = term.current()
+	monitor = peripheral.find("monitor")
+	if monitor ~= nil then
 		monitor.setTextScale(1)
 		screenX,screenY = monitor.getSize()
 		local scaleX,scaleY = screenX/maxX, screenY/maxY
@@ -507,5 +532,14 @@ function startGame(game)
 				end
 			end
 		end
+	end
+
+	--Cleanup monitor and modem
+	term.redirect(termRedirect)
+	if modem ~= nil then
+		rednet.close(modem)
+		modem = nil
+		playerNum = 0
+		connections = {}
 	end
 end

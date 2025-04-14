@@ -37,6 +37,16 @@ A lua library for creating small text grid turn based games for the ComputerCraf
 wget run https://raw.githubusercontent.com/stuin/CC-Checkerboard/refs/heads/main/install.lua
 ```
 
+### Play in terminal
+
+Games can also be played outside of ComputerCraft in the terminal using base lua. ansi-term.lua provides alias functions for the libraries and terminal input and output.
+
+By default, terminal buffers mean that any text or mouse input must be followed by an enter key, but the input-wrapper.py python script manually inserts an enter key to avoid this and allow direct mouse/keyboard control.
+
+```
+python input-wrapper.py games/binario.lua
+```
+
 ### Programming Design
 
 Initial game setup is done with one object and a lambda function to create the initial state for each cell of the grid. A reset function should also be included if there is any custom data included in the game object.

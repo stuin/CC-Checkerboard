@@ -14,6 +14,13 @@ local checkers = {
 	titleColor=colors.white
 }
 
+local function clearSelect(game, x,y)
+	if game.board[x][y][1] == '_' and game.board[x][y][2] ~= nullFunc then
+		return {'_', nullFunc, colors.white, colors.gray}
+	end
+	return game.board[x][y]
+end
+
 --Check for promotion to Queen
 local function checkEnd(game, x,y)
 	if game.board[x][y][1] == '0' and y == 1 and game.turn == 2 then
@@ -51,13 +58,6 @@ local function jump(game, x,y)
 		mapBoard(game, clearSelect)
 		nextTurn(game)
 	end
-end
-
-local function clearSelect(game, x,y)
-	if game.board[x][y][1] == '_' and game.board[x][y][2] ~= nullFunc then
-		return {'_', nullFunc, colors.white, colors.gray}
-	end
-	return game.board[x][y]
 end
 
 --Highlight available moves

@@ -12,7 +12,7 @@ local minesweeper = {
 	maxSize=20,
 	mines=-1,
 	revealed=-1,
-	edgeColor=colors.black,
+	edgeColor=colors.gray,
 	gridColor=colors.white,
 	titleColor=colors.white
 }
@@ -95,7 +95,8 @@ end
 
 --Clear board data
 function minesweeper.resetFunc(game)
-	game.mines = game.width * game.height / 6.4
+	game.mines = game.width * game.height / 6.4 + 0.5
+	game.mines = math.floor(game.mines)
 	game.revealed = -1
 end
 

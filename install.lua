@@ -1,12 +1,12 @@
 local files = {
 	"cccheckerboard.lua",
-	"gamelist.lua"
+	"gamelist.lua",
+	"binario-gen.lua"
 }
 
 local games = {
 	"tictactoe.lua",
 	"othello.lua",
-	"binario-gen.lua",
 	"binario.lua",
 	"minesweeper.lua",
 	"checkers.lua"
