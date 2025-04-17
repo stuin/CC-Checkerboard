@@ -52,7 +52,8 @@ subprocess.run(['stty', '-echo'])
 print("\x1B[?1003h")
 
 #Run provided file in lua
-command = ['lua', sys.argv[1]]
+command = ['lua', sys.argv[1], "--ansi-no-mouse"]
+command += sys.argv[2:]
 p = subprocess.Popen(command, stdin=subprocess.PIPE)
 
 #Take input one character at a time

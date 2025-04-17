@@ -58,7 +58,7 @@ end
 
 --Draw entire grid to screen
 local function drawGrid(game)
-	--Draw cells and sides
+	--Draw cells and column labels
 	for x=1,gridX do
 		drawCell(x,0, {string.char(96+x), nullFunc, game.gridColor, game.edgeColor})
 		drawCell(x,gridY+1, {string.char(96+x), nullFunc, game.gridColor, game.edgeColor})
@@ -67,7 +67,7 @@ local function drawGrid(game)
 		end
 	end
 
-	--Draw top and bottom
+	--Draw row labels
 	for y=1,gridY do
 		drawCell(0,y, {""..(y%10), nullFunc, game.gridColor, game.edgeColor})
 		drawCell(gridX+1,y, {""..(y%10), nullFunc, game.gridColor, game.edgeColor})

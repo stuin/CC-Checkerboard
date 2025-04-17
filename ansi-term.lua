@@ -23,14 +23,12 @@ colors = {
 --Terminal output
 term = {
 	textColor=colors.white,
-	backgroundColor=colors.black
+	backgroundColor=colors.black,
+	size=2
 }
 
-io.write("\x1B[48;5;0m")
-io.write("\x1B[2J")
-
 function term.getSize()
-	return 80,25
+	return 40,25
 end
 
 function term.clear()
@@ -42,7 +40,7 @@ function term.clearLine()
 end
 
 function term.setCursorPos(x,y)
-	io.write("\x1B[",y,";",x,"H")
+	io.write("\x1B[",y*term.size,";",x*term.size,"H")
 end
 
 function term.setTextColor(color)
@@ -68,12 +66,30 @@ function term.getBackgroundColor()
 end
 
 function term.write(s)
+	io.write("\x1B]66;s=",term.size,";")
 	io.write(s)
+	io.write("\a")
 end
 
 --Terminal input
 local buffer = ""
-local mouseSupport = false
+local mouseSupport = true
+
+--Blank background
+io.write("\x1B[48;5;0m")
+
+--Clear Screen
+io.write("\x1B[2J")
+
+for i=1,#arg do
+	if arg[i] == "--ansi-no-mouse" then
+		mouseSupport = false
+	elseif arg[i] == "--ansi-scale" then
+		local s = tonumber(arg[i + 1])
+		i = i + 1
+		term.size = s
+	end
+end
 
 function os.pullEvent()
 	if mouseSupport then
@@ -83,7 +99,7 @@ function os.pullEvent()
 
 	local escape = 0
 	local mouse = false
-	local x = 0
+	local x,y = 0,0
 
 	while true do
 		--Read stdin
@@ -111,7 +127,9 @@ function os.pullEvent()
 						io.write("\x1B[?1000l")
 					end
 					buffer = buffer:sub(i+1)
-					return "mouse_click", 0, x-32, c-32
+					x,y = x-32,c-32
+					x,y = math.floor(x/term.size), math.floor(y/term.size)
+					return "mouse_click", 0, x,y
 				end
 				escape = escape - 1
 			elseif c > 47 then
@@ -132,6 +150,7 @@ end
 peripheral = {}
 shell = {}
 
+
 function peripheral.find(name)
 	return nil
 end
@@ -141,10 +160,10 @@ function shell.run(cmd)
 end
 
 function term.current()
-	return nil
+	return 0
 end
 
-function term.redirect(term)
+function term.redirect(t)
 
 end
 

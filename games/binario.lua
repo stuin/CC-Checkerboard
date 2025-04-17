@@ -1,7 +1,7 @@
 require("cccheckerboard")
 
 run_main = false
-require("binario-gen")
+local gen = require("binario-gen")
 
 --Initial game configuration
 local binario = {
@@ -28,7 +28,7 @@ local function checkWin(game)
 		end
 	end
 
-	if count_blanks(board) == 0 and valid_board(board) then
+	if gen.count_blanks(board) == 0 and gen.valid_board(board) then
 		game.playing = false
 	end
 end
@@ -54,11 +54,11 @@ end
 function binario.setupFunc(game, x,y)
 	--Assign specific cell
 	local t = game.generated[x][y]
-	if t == BLANK then
+	if t == '_' then
 		return {'_', play, colors.white, colors.black}
-	elseif t == ZERO then
+	elseif t == '0' then
 		return {'0', nullFunc, colors.lightGray, colors.black}
-	elseif t == ONE then
+	elseif t == '1' then
 		return {'1', nullFunc, colors.green, colors.gray}
 	end
 end
@@ -80,11 +80,11 @@ function binario.resetFunc(game)
 			end
 		end
 
-		game.generated = generate_puzzle(board)
+		game.generated = gen.generate_puzzle(board)
 		tries = tries - 1
 	end
 
-	game.blank = count_blanks(game.generated)
+	game.blank = gen.count_blanks(game.generated)
 end
 
 --Start game

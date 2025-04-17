@@ -9,7 +9,9 @@ local games = {
 	"othello.lua",
 	"binario.lua",
 	"minesweeper.lua",
-	"checkers.lua"
+	"checkers.lua",
+	"battleship.lua",
+	"connect4.lua"
 }
 
 local git = "https://raw.githubusercontent.com/stuin/CC-Checkerboard/refs/heads/main/"

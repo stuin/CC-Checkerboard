@@ -1,13 +1,23 @@
 --Copied from https://github.com/jpnickolas/takuzu-generator/blob/master/generator.cpp
 --Manually converted to lua
 
+local gen = {}
+
 local DEFAULT_SIZE = 8
-BLANK = '_'
-ZERO = '0'
-ONE = '1'
+local BLANK = '_'
+local ZERO = '0'
+local ONE = '1'
+
+--Debug print for board checking
+local function printd(s)
+  if false then
+    term.setCursorPos(1,1)
+    print(s)
+  end
+end
 
 --Prints out the board
-function print_board(board)
+function gen.print_board(board)
   for i=1,#board do
     term.setCursorPos(1,i)
     for j=1,#board[i] do
@@ -18,12 +28,14 @@ function print_board(board)
 end
 
 --Returns true if the board is a valid board, and false otherwise
-function valid_board(board)
+function gen.valid_board(board)
   local zero,one = 0,0
   local size = #board
 
   --checks the rows for too many 1's or 0's
   for i=1,size do
+    one = 0
+    zero = 0
     for j=1,size do
       if board[i][j] == ONE then
         one = one + 1
@@ -32,15 +44,15 @@ function valid_board(board)
       end
     end
     if one > size/2 or zero > size/2 then
+      printd("rows=")
       return false
     end
-
-    one = 0
-    zero = 0
   end
 
   --checks the columns for too many 1's or 0's
   for i=1,size do
+    one = 0
+    zero = 0
     for j=1,size do
       if board[j][i] == ONE then
         one = one + 1
@@ -49,19 +61,18 @@ function valid_board(board)
       end
     end
     if one > size/2 or zero > size/2 then
+      printd("cols=")
       return false
     end
-
-    one = 0
-    zero = 0
   end
 
   --checks the rows for any values of more than 2 in succession
-  local consecutive = false
   for i=1,size do
+    local consecutive = false
     for j=2,size do
       if board[i][j]==board[i][j-1] and board[i][j] ~= BLANK then
         if consecutive then
+          printd("rows3")
           return false
         else
           consecutive = true
@@ -73,11 +84,12 @@ function valid_board(board)
   end
 
   --checks the columns for any values of more than 2 in succession
-  consecutive = false
   for i=1,size do
+    local consecutive = false
     for j=2,size do
       if board[j][i]==board[j-1][i] and board[j][i] ~= BLANK then
         if consecutive then
+          printd("cols3")
           return false
         else
           consecutive = true
@@ -99,6 +111,7 @@ function valid_board(board)
         end
       end
       if same then
+        printd("rowsd")
         return false
       end
     end
@@ -115,6 +128,7 @@ function valid_board(board)
         end
       end
       if same then
+        printd("colsd")
         return false
       end
     end
@@ -124,7 +138,7 @@ function valid_board(board)
 end
 
 --counts the blank spaces in a board
-function count_blanks(board)
+function gen.count_blanks(board)
   local blanks = 0
 
   for i=1,#board do
@@ -139,10 +153,10 @@ function count_blanks(board)
 end
 
 --chooses a random blank space from the board, and sends back the (x, y)
-function get_random_blank(board)
+function gen.get_random_blank(board)
 
   --counts the blanks and chooses a random one
-  local blanks = count_blanks(board)
+  local blanks = gen.count_blanks(board)
   local blank = math.random(1, blanks)-1
 
   --finds that random blank spot, and sends it back
@@ -162,9 +176,9 @@ end
 --Recursively counts the number of solutions of the board.
 --This caps at 2 for the sake of efficiency, but can be altered easily to get
 --the total number of solutions.
-function count_solutions(board)
+function gen.count_solutions(board)
   --checks if the board is even valid
-  if not valid_board(board) then
+  if not gen.valid_board(board) then
     return 0
   end
 
@@ -175,7 +189,7 @@ function count_solutions(board)
 
         --tests zero in that blank spot
         board[i][j]=ZERO
-        local solutions = count_solutions(board)
+        local solutions = gen.count_solutions(board)
 
         --if there are too many solutions, don't even bother getting the rest
         if solutions>1 then
@@ -184,7 +198,7 @@ function count_solutions(board)
         else
           --tests one in that blank spot
           board[i][j]=ONE
-          solutions = solutions + count_solutions(board)
+          solutions = solutions + gen.count_solutions(board)
 
           --resets the board before returning the number of solutions
           board[i][j]=BLANK
@@ -199,8 +213,8 @@ function count_solutions(board)
 end
 
 --recursively finds the first solution to a puzzle, and returns it
-function get_solution(board)
-  if not valid_board(board) then
+function gen.get_solution(board)
+  if not gen.valid_board(board) then
     return nil
   end
 
@@ -213,12 +227,12 @@ function get_solution(board)
         board[i][j]=ZERO
 
         --gets the first solution with a zero
-        solution = get_solution(board)
+        solution = gen.get_solution(board)
 
         --if the solution is empty, tries again with a one
         if solution == nil then
           board[i][j]=ONE
-          solution = get_solution(board)
+          solution = gen.get_solution(board)
 
           if solution == nil then
             board[i][j]=BLANK
@@ -245,14 +259,14 @@ function get_solution(board)
 end
 
 --makes the game a bit easier by giving the user some free spaces
-function ease_board(board, extra_spots)
+function gen.ease_board(board, extra_spots)
 
   --gets the solution to the puzzle
-  solution = get_solution(board)
+  solution = gen.get_solution(board)
 
   --gets random blank spots, and fills them in
   for i=1,extra_spots do
-    local x,y = get_random_blank(board)
+    local x,y = gen.get_random_blank(board)
 
     board[x][y] = solution[x][y]
   end
@@ -263,20 +277,20 @@ end
 --recursively generates the takuzu puzzle based on the size of the initial
 --board sent. If the board is filled, it will attempt to create a puzzle from
 --it.
-function generate_puzzle(board)
+function gen.generate_puzzle(board)
 
   --counts the possible solutions in the board
-  local solutions = count_solutions(board)
+  local solutions = gen.count_solutions(board)
 
   --if there is only one solution, return that board with a few spaces filled
   if solutions == 1 then
-    return ease_board(board, count_blanks(board)/8)
+    return gen.ease_board(board, gen.count_blanks(board)/8)
   elseif solutions > 1 then
     --will try up to 10 times to create a working puzzle
     for i=1,10 do
 
       --gets a random blank spot, and fills it with a random zero or one
-      local x,y = get_random_blank(board)
+      local x,y = gen.get_random_blank(board)
       if math.random(1,2) == 1 then
         board[x][y] = ZERO
       else
@@ -284,7 +298,7 @@ function generate_puzzle(board)
       end
 
       --generates a new puzzle with that configuration
-      generated_puzzle = generate_puzzle(board)
+      generated_puzzle = gen.generate_puzzle(board)
 
       --if the new puzzle is successful, it is returned. Otherwise, reattempt
       if generated_puzzle == nil then
@@ -337,14 +351,14 @@ function main()
       end
     end
 
-    board = generate_puzzle(board)
+    board = gen.generate_puzzle(board)
     tries = tries - 1
   end
 
   --prints out the board
   if board ~= nil then
     term.clear()
-    print_board(board)
+    gen.print_board(board)
   end
   term.write(10-tries)
 end
@@ -352,4 +366,6 @@ end
 
 if run_main == nil then
   main()
+else
+  return gen
 end
