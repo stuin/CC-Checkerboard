@@ -23,27 +23,32 @@ local ships = {
 }
 
 local function shoot(game, x,y)
-	if game.board[x][y+10][1] ~= '~' then
-		game.board[x][y+10] = {'*', nullFunc, colors.red, colors.gray}
-		game.board[x][y] = {'*', nullFunc, colors.red, colors.gray}
+	local pOther = (game.turn % #game.players) + 1
+	if game.board[x][y+10][5][pOther] ~= nil then
+		game.board[x][y+10][5][pOther] = {'*', nil, colors.red, colors.gray}
+		game.board[x][y][5][game.turn] = {'*', nullFunc, colors.red, colors.gray}
 		game.players[game.turn].hit = game.players[game.turn].hit + 1
 	else
-		game.board[x][y+10] = {'*', nullFunc, colors.white, colors.blue}
-		game.board[x][y] = {'*', nullFunc, colors.white, colors.blue}
+		game.board[x][y+10][5][pOther] = {'*', nil, colors.white, colors.blue}
+		game.board[x][y][5][game.turn] = {'*', nullFunc, colors.white, colors.blue}
 	end
 
 	if game.players[game.turn].hit == 17 then
 		game.playing = false
+	else
+		nextTurn(game)
 	end
 end
 
 local function mirror(game,x,y)
-	game.board[x][y-10][2](game,x,y-10)
+	if game.board[x][y-10][5][game.turn] == nil then
+		game.board[x][y-10][2](game,x,y-10)
+	end
 end
 
 local function playSetup(game,x,y)
 	if y < 10 then
-		return {'~', shoot, colors.black, colors.blue}
+		return {'~', shoot, colors.black, colors.blue, {nil, nil}}
 	elseif y > 10 then
 		game.board[x][y][2] = mirror
 		return game.board[x][y]
@@ -57,18 +62,18 @@ local function rotate(game, x,y)
 	local p = game.players[game.turn]
 	if p.rotate then
 		for i=2,ships[p.placing][3] do
-			game.board[1][i] = {'~', nullFunc, colors.black, colors.blue}
+			game.board[1][i][5][game.turn] = nil
 		end
 		for i=2,ships[p.placing][3] do
-			game.board[i][1] = {ships[p.placing][2], rotate, colors.white, colors.gray}
+			game.board[i][1][5][game.turn] = {ships[p.placing][2], rotate, colors.white, colors.gray}
 		end
 		p.rotate = false
 	else
 		for i=2,ships[p.placing][3] do
-			game.board[i][1] = {'~', nullFunc, colors.black, colors.blue}
+			game.board[i][1][5][game.turn] = nil
 		end
 		for i=2,ships[p.placing][3] do
-			game.board[1][i] = {ships[p.placing][2], rotate, colors.white, colors.gray}
+			game.board[1][i][5][game.turn] = {ships[p.placing][2], rotate, colors.white, colors.gray}
 		end
 		p.rotate = true
 	end
@@ -76,25 +81,32 @@ end
 
 local function nextShip(game, x,y)
 	local p = game.players[game.turn]
+	--Remove previous ship
 	if p.rotate then
 		for i=1,ships[p.placing][3] do
-			game.board[1][i] = {'~', nullFunc, colors.black, colors.blue}
+			game.board[1][i][5][game.turn] = nil
 		end
 	else
 		for i=1,ships[p.placing][3] do
-			game.board[i][1] = {'~', nullFunc, colors.black, colors.blue}
+			game.board[i][1][5][game.turn] = nil
 		end
 	end
 	p.rotate = false
 	p.placing = p.placing + 1
 
+	--Move on after last ship
 	if p.placing > #ships then
-		--nextTurn(game)
-		mapBoard(game, playSetup)
-	else
-		for i=1,ships[p.placing][3] do
-			game.board[i][1] = {ships[p.placing][2], rotate, colors.white, colors.gray}
+		nextTurn(game)
+		if game.turn == 1 then
+			mapBoard(game, playSetup)
+			return
 		end
+	end
+
+	--Prepare next ship
+	local p = game.players[game.turn]
+	for i=1,ships[p.placing][3] do
+		game.board[i][1][5][game.turn] = {ships[p.placing][2], rotate, colors.white, colors.gray}
 	end
 end
 
@@ -102,12 +114,12 @@ local function place(game, x,y)
 	local p = game.players[game.turn]
 	if p.rotate and onBoard(x,y+ships[p.placing][3]-1) then
 		for i=1,ships[p.placing][3] do
-			game.board[x][y+i-1] = {ships[p.placing][2], nullFunc, colors.white, colors.gray}
+			game.board[x][y+i-1][5][game.turn] = {ships[p.placing][2], nil, colors.white, colors.gray}
 		end
 		nextShip(game, x,y)
 	elseif onBoard(x+ships[p.placing][3]-1, y) then
 		for i=1,ships[p.placing][3] do
-			game.board[x+i-1][y] = {ships[p.placing][2], nullFunc, colors.white, colors.gray}
+			game.board[x+i-1][y][5][game.turn] = {ships[p.placing][2], nil, colors.white, colors.gray}
 		end
 		nextShip(game, x,y)
 	end
@@ -118,11 +130,11 @@ function battleship.setupFunc(game, x,y)
 	if y == 10 then
 		return {string.char(96+x), nullFunc, game.gridColor, game.edgeColor}
 	elseif y == 1 and x < 6 then
-		return {'C', rotate, colors.white, colors.gray}
+		return {'~', nullFunc, colors.black, colors.blue, {{'C', rotate, colors.white, colors.gray}, nil}}
 	elseif y > 10 then
-		return {'~', place, colors.black, colors.blue}
+		return {'~', place, colors.black, colors.blue, {nil, nil}}
 	else
-		return {'~', nullFunc, colors.black, colors.blue}
+		return {'~', nullFunc, colors.black, colors.blue, {nil, nil}}
 	end
 end
 

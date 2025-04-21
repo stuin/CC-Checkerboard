@@ -4,8 +4,7 @@ require("cccheckerboard")
 local minesweeper = {
 	name="Minesweeper",
 	players={
-		{name='Player', color=colors.white},
-		{name='Mines', color=colors.red},
+		{name='Player', color=colors.white}
 	},
 	width=7,
 	height=7,
@@ -74,7 +73,7 @@ local function play(game, x,y)
 	--Reveal square
 	if game.board[x][y][5] then
 		--Lose on mine
-		game.turn = 2
+		game.turn = 0
 		game.playing = false
 		mapBoard(game, reveal)
 	else
