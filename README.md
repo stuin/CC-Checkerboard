@@ -21,7 +21,8 @@ A lua library for creating small text grid turn based games for the ComputerCraf
 - Move history
 - Single file library
 - Synced random seed
-- Board generation at game start or at first move
+- Random board generation can happen at game start or during the game
+- Supports a unique hidden board for each player (ex: battleship)
 - Add `-u` to args to install updates from git
 - `gamelist -m` to wait for any multiplayer game and join
 - Multiple example games:
@@ -31,7 +32,7 @@ A lua library for creating small text grid turn based games for the ComputerCraf
 	- Minesweeper
 	- Binario
 
-### Install
+### Install in ComputerCraft
 
 ```
 wget run https://raw.githubusercontent.com/stuin/CC-Checkerboard/refs/heads/main/install.lua
@@ -39,9 +40,9 @@ wget run https://raw.githubusercontent.com/stuin/CC-Checkerboard/refs/heads/main
 
 ### Play in terminal
 
-Games can also be played outside of ComputerCraft in the terminal using base lua. ansi-term.lua provides alias functions for the libraries and terminal input and output.
+Games can also be played outside of ComputerCraft in the terminal using base lua. `ansi-term.lua` provides alias functions for the libraries and terminal input and output.
 
-By default, terminal buffers mean that any text or mouse input must be followed by an enter key, but the input-wrapper.py python script manually inserts an enter key to avoid this and allow direct mouse/keyboard control.
+By default, terminal buffers mean that any text or mouse input must be followed by an enter key, but the `input-wrapper.py` script manually inserts an enter key to avoid this, allowing direct mouse/keyboard control.
 
 ```
 python input-wrapper.py games/binario.lua

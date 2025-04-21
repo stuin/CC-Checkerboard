@@ -20,7 +20,9 @@ local gameFormat = {
 		"Text Character",
 		"Function when selected",
 		"Text Color",
-		"Background Color"
+		"Background Color",
+		"List of alternate layer cells",
+		"Custom data object"
 	}}},
 	moves={{
 		"x","y","player","time"
@@ -42,14 +44,20 @@ local gridX,gridY = 0,0
 local monitor = nil
 
 --Variables for multiplayer
+local playerNum = 0
+local boardLayer = 0
+
 local modem = nil
 local connections = {}
-local playerNum = 0
 local baseProtocolName = "CCCheckerboard-"..cccheckerboardVersion
 local protocolName = baseProtocolName
 
 --Draw single cell to screen
 local function drawCell(x,y,cell)
+	if boardLayer > 0 and cell[5] ~= nil and cell[5][boardLayer] ~= nil then
+		cell = cell[5][boardLayer]
+	end
+
 	term.setCursorPos(x+startX, y+startY)
 	term.setTextColor(cell[3])
 	term.setBackgroundColor(cell[4])
@@ -323,10 +331,14 @@ local function resetBoard(game)
 	if playerNum == 1 then
 		game.moves[#game.moves+1] = {0,0,0,game.seed}
 		broadcast({0,0,0,game.seed})
+		boardLayer = 1
 	elseif playerNum ~= 0 then
 		local id, message = rednet.receive(protocolName)
 		game.moves[#game.moves+1] = message
 		game.seed = message[4]
+		boardLayer = playerNum
+	else
+		boardLayer = 1
 	end
 	math.randomseed(game.seed)
 
@@ -363,6 +375,10 @@ directions = {
 function nextTurn(game)
 	if game.playing then
 		game.turn = (game.turn % #game.players) + 1
+
+		if playerNum == 0 then
+			boardLayer = game.turn
+		end
 	end
 end
 
@@ -485,12 +501,16 @@ function startGame(game)
 				term.setCursorPos(1,gridY+startY+4)
 			end
 		else
-			if game.board[x][y][2] ~= nullFunc then
+			local cFunc = game.board[x][y][2]
+			if game.board[x][y][5] ~= nil and game.board[x][y][5][game.turn] ~= nil and game.board[x][y][5][game.turn][2] ~= nil then
+				cFunc = game.board[x][y][5][game.turn][2]
+			end
+			if cFunc ~= nullFunc then
 				--Record move
 				game.moves[#game.moves+1] = {x,y,game.turn,os.epoch()}
 
 				--Run function from seleted cell
-				game.board[x][y][2](game,x,y)
+				cFunc(game,x,y)
 
 				--Send to other players
 				broadcast({x,y,game.turn,os.epoch()})
@@ -499,9 +519,18 @@ function startGame(game)
 			--Check for game end
 			if not game.playing then
 				drawGrid(game)
-				if game.turn == 0 then
+
+				--Display winner
+				if game.turn == 0 and #game.players > 1 then
 					term.setCursorPos(centerX-5,gridY+startY+2)
 					term.write("It's a Tie ")
+				elseif game.turn == 0 and #game.players == 1 then
+					local name = game.players[1].name
+					term.setCursorPos(centerX-(#name+7)/2,gridY+startY+2)
+					term.setTextColor(game.players[game.turn].color)
+					term.write(name)
+					term.write(" Lost. ")
+					term.setTextColor(colors.white)
 				else
 					local name = game.players[game.turn].name
 					term.setCursorPos(centerX-(#name+7)/2,gridY+startY+2)

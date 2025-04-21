@@ -10,6 +10,7 @@ local games = {
 	"binario.lua",
 	"minesweeper.lua",
 	"checkers.lua",
+	"chess.lua",
 	"battleship.lua",
 	"connect4.lua"
 }

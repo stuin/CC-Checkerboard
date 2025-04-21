@@ -4,6 +4,7 @@ print("Listing installed games")
 
 require("tictactoe")
 require("checkers")
+require("chess")
 require("connect4")
 require("battleship")
 require("othello")
