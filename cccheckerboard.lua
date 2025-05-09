@@ -39,7 +39,7 @@ end
 --Variables for drawing
 local screenX,screenY = term.getSize()
 local centerX,centerY = screenX/2,screenY/2
-local startX,startY = 1,3
+local startX,startY = 1,1
 local gridX,gridY = 0,0
 local monitor = nil
 
@@ -92,10 +92,24 @@ local function drawGrid(game)
 	term.setBackgroundColor(colors.black)
 end
 
+local centered = false
+local restartX = screenX
+local restartY = 4
+local quitX = screenX
+local quitY = 5
+
+local function textX(width)
+	if centered then
+		return centerX-(width/2)
+	else
+		return screenX-width
+	end
+end
+
 --Game name and current player name
 local function drawHeader(game)
 	--term.clear()
-	term.setCursorPos(centerX-#game.name/2, 1)
+	term.setCursorPos(textX(#game.name), 1)
 	term.setBackgroundColor(colors.black)
 	term.setTextColor(game.titleColor)
 	term.write(game.name)
@@ -107,7 +121,7 @@ local function drawHeader(game)
 	if game.turn > 0 and game.turn <= #game.players then
 		local name = game.players[game.turn].name
 		term.setTextColor(game.players[game.turn].color)
-		term.setCursorPos(centerX-(#name+9)/2, 2)
+		term.setCursorPos(textX(#name+9), 2)
 		if playerNum ~= 0 and game.turn == playerNum then
 			term.setBackgroundColor(colors.green)
 		elseif playerNum ~= 0 and game.turn ~= playerNum then
@@ -130,7 +144,7 @@ local function drawHeader(game)
 	--First turn own name
 	if #game.moves == 0 and playerNum ~= 0 then
 		local name = game.players[playerNum].name
-		term.setCursorPos(centerX-(#name+11)/2, gridY+startY+2)
+		term.setCursorPos(textX(#name+11), gridY+startY+2)
 		term.setTextColor(game.players[playerNum].color)
 		term.write("Playing as ")
 		term.write(name)
@@ -138,12 +152,13 @@ local function drawHeader(game)
 	end
 
 	--End buttons
-	term.setCursorPos(centerX-8,gridY+startY+3)
+	term.setCursorPos(restartX+1, restartY)
 	term.setTextColor(colors.white)
 	term.setBackgroundColor(colors.green)
 	term.write(" Restart ")
 	term.setBackgroundColor(colors.black)
 	term.write(" ")
+	term.setCursorPos(quitX+1, quitY)
 	term.setBackgroundColor(colors.red)
 	term.write(" Quit ")
 	term.setBackgroundColor(colors.black)
@@ -181,6 +196,8 @@ local function input(remote)
 		term.setCursorPos(centerX-1,gridY+startY+2)
 		term.write(code)
 		x = string.byte(code)-96
+		y = 0
+		local ydigit = 1
 
 		--Quit/Restart
 		if code == "R" then
@@ -190,37 +207,53 @@ local function input(remote)
 		end
 
 		--Keyboard input y number
-		event, code, mX, mY = os.pullEvent()
-		while event ~= eventS and event ~= "char" and event ~= "rednet_message" do
+		while y >= 0 do
 			event, code, mX, mY = os.pullEvent()
-		end
-		if event == "char" then
-			term.write(code)
-			term.setCursorPos(1,gridY+startY+2)
+			while event ~= eventS and event ~= "char" and event ~= "rednet_message" do
+				event, code, mX, mY = os.pullEvent()
+			end
+			if event == "char" then
+				term.write(code)
 
-			y = tonumber(code)
-			if code == "R" then
-				--Restart
-				return 0,-1
-			elseif code == "Q" then
-				--Quit
-				return 0,-2
-			elseif onBoard(x,y) and not remote then
-				--Select cell
-				return x,y
+				if code == "R" then
+					--Restart
+					term.setCursorPos(1,gridY+startY+2)
+					return 0,-1
+				elseif code == "Q" then
+					--Quit
+					term.setCursorPos(1,gridY+startY+2)
+					return 0,-2
+				elseif tonumber(code) ~= nil and (code == '0' or onBoard(x,tonumber(code))) and not remote then
+					--Select cell
+					y = y + tonumber(code)
+					if y*10*ydigit <= gridY then
+						y = y*10
+						ydigit = ydigit * 10
+					else
+						term.setCursorPos(1,gridY+startY+2)
+						return x,y
+					end
+				elseif (code == ' ' or code == '\n') and onBoard(x,y/10) and not remote then
+					term.setCursorPos(1,gridY+startY+2)
+					return x,y/10
+				else
+					--Skip
+					term.setCursorPos(1,gridY+startY+2)
+					return 0,0
+				end
 			else
-				--Skip
-				return 0,0
+				term.setCursorPos(1,gridY+startY+2)
+				y = -1
 			end
 		end
 	end
 
 	--Check mouse position
 	x,y = mX-startX, mY-startY
-	if (mX > centerX-9) and (mX < centerX) and mY == (gridY+startY+3) then
+	if (mX > restartX) and (mX < restartX+9) and mY == restartY then
 		--Restart
 		return 0,-1
-	elseif (mX > centerX+1) and (mX < centerX+7) and mY == (gridY+startY+3) then
+	elseif (mX > quitX) and (mX < quitX+6) and mY == quitY then
 		--Quit
 		return 0,-2
 	elseif onBoard(x,y) and not remote then
@@ -393,7 +426,7 @@ end
 
 --Check if coords are inside grid
 function onBoard(x,y)
-	return not (x > gridX or y > gridY or x < 1 or y < 1)
+	return x ~= nil and y ~= nil and not (x > gridX or y > gridY or x < 1 or y < 1)
 end
 
 --Setup and play game
@@ -427,6 +460,9 @@ function startGame(game)
 				game.width = s
 				print("Set size to "..s)
 			end
+		elseif arg[i] == "-c" then
+			centered = true
+			startY = 3
 		elseif arg[i] == "-u" then
 			--Download updates from git
 			shell.run("wget run https://raw.githubusercontent.com/stuin/CC-Checkerboard/refs/heads/main/install.lua")
@@ -437,16 +473,26 @@ function startGame(game)
 	--Calculate maximum game board size
 	gridX,gridY = game.width,game.height
 	local maxX,maxY = gridX+startX+2, gridY+startY+3
-	if #game.name > maxX then
-		maxX = #game.name
-	end
-	for i=1,#game.players do
-		if #game.players[i].name+9 > maxX then
-			maxX = #game.players[i].name+9
+	if centered then
+		if #game.name > maxX then
+			maxX = #game.name
 		end
-	end
-	if 16 > maxX then
-		maxX = 16
+		for i=1,#game.players do
+			if #game.players[i].name+9 > maxX then
+				maxX = #game.players[i].name+9
+			end
+		end
+		if 16 > maxX then
+			maxX = 16
+		end
+	else
+		maxY = gridY+startY+1
+		maxX = gridX+startX+2+#game.name
+		for i=1,#game.players do
+			if #game.players[i].name+gridX+startX+2 > maxX then
+				maxX = #game.players[i].name+gridX+startX+2
+			end
+		end
 	end
 
 	--Use monitor and set scale
@@ -456,6 +502,10 @@ function startGame(game)
 		monitor.setTextScale(1)
 		screenX,screenY = monitor.getSize()
 		local scaleX,scaleY = screenX/maxX, screenY/maxY
+
+		if scaleX < 1 or scaleY < 1 then
+			scaleX,scaleY = 1,1
+		end
 
 		if scaleX < scaleY then
 			monitor.setTextScale(scaleX)
@@ -469,7 +519,16 @@ function startGame(game)
 	end
 
 	--Center board
-	startX = math.floor(centerX-gridX/2-1)
+	if centered then
+		startX = math.floor(centerX-gridX/2-1)
+		restartX = centerX-9
+		restartY = gridY+startY+3
+		quitX = centerX+1
+		quitY = gridY+startY+3
+	else
+		restartX = textX(9)
+		quitX = textX(6)
+	end
 
 	--Setup game
 	resetBoard(game)
@@ -518,6 +577,9 @@ function startGame(game)
 
 			--Check for game end
 			if not game.playing then
+				if game.turn ~= 0 then
+					boardLayer = game.turn
+				end
 				drawGrid(game)
 
 				--Display winner
@@ -527,7 +589,7 @@ function startGame(game)
 				elseif game.turn == 0 and #game.players == 1 then
 					local name = game.players[1].name
 					term.setCursorPos(centerX-(#name+7)/2,gridY+startY+2)
-					term.setTextColor(game.players[game.turn].color)
+					term.setTextColor(game.players[1].color)
 					term.write(name)
 					term.write(" Lost. ")
 					term.setTextColor(colors.white)

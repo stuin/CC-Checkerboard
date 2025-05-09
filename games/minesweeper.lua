@@ -22,22 +22,22 @@ local function reveal(game, x,y)
 	game.revealed = game.revealed + 1
 
 	--Reveal Mine
-	if game.board[x][y][5] then
-		game.board[x][y] = {"*", nullFunc, colors.red, colors.black, true}
+	if game.board[x][y][6] then
+		game.board[x][y] = {"*", nullFunc, colors.red, colors.black, nil, true}
 	elseif game.board[x][y][1] == '_' then
 		--Count mines
 		for i=1,#directions do
 			local _x,_y = x+directions[i][1],y+directions[i][2]
-			if onBoard(_x,_y) and game.board[_x][_y][5] then
+			if onBoard(_x,_y) and game.board[_x][_y][6] then
 				count = count + 1
 			end
 		end
 
 		--Show number
 		if count == 0 then
-			game.board[x][y] = {".", nullFunc, colors.blue, colors.black, false}
+			game.board[x][y] = {".", nullFunc, colors.blue, colors.black, nil, false}
 		else
-			game.board[x][y] = {""..count, nullFunc, colors.green, colors.black, false}
+			game.board[x][y] = {""..count, nullFunc, colors.green, colors.black, nil, false}
 		end
 	end
 
@@ -61,9 +61,9 @@ local function play(game, x,y)
 			local valid = false
 			while not valid do
 				local _x,_y = math.random(1, game.width), math.random(1, game.height)
-				if game.board[_x][_y][5] == false and (_x < x-1 or _x > x+1 or _y < y-1 or _y > y+1) then
+				if game.board[_x][_y][6] == false and (_x < x-1 or _x > x+1 or _y < y-1 or _y > y+1) then
 					valid = true
-					game.board[_x][_y][5] = true
+					game.board[_x][_y][6] = true
 				end
 			end
 		end
@@ -71,7 +71,7 @@ local function play(game, x,y)
 	end
 
 	--Reveal square
-	if game.board[x][y][5] then
+	if game.board[x][y][6] then
 		--Lose on mine
 		game.turn = 0
 		game.playing = false
@@ -89,7 +89,7 @@ end
 
 --Set blank board
 function minesweeper.setupFunc(game, x,y)
-	return {'_', play, colors.white, colors.black, false}
+	return {'_', play, colors.white, colors.black, nil, false}
 end
 
 --Clear board data

@@ -6,9 +6,13 @@ A lua library for creating small text grid turn based games for the ComputerCraf
 
 - Fully mouse controllable with `Restart` and `Quit` buttons
 - Accepts keyboard control
-	- `a1` = 1,1 - `h8` = 8,8
+	- `a1` = 1,1
+	- `h8` = 8,8
 	- `R` to Restart game
 	- `Q` to Quit game
+	- For more than 9 rows:
+		- `a10` = 1,10 
+		- `a01` or `a1 ` = 1,1
 - Connects to monitor and resizes to fill screen
 - Supports any number of players per game
 	- Defaults to shared screen that swaps between players
@@ -16,7 +20,8 @@ A lua library for creating small text grid turn based games for the ComputerCraf
 	- The computer will wait until there are as many computers connected as players in the game
 	- All computers will display the board, only the current player can select a cell
 	- Any player can restart or quit the game for everyone
-- Automatic centering
+- By default, board is on left edge and text options are on right
+- Add `-c` to args to center board and text
 - All colors are customizable
 - Move history
 - Single file library
@@ -118,3 +123,28 @@ end
 After the selected cell function returns the board is redrawn and a new cell is selected. This can be the same player or the next player depending on if `nextTurn(game)` has been run.
 
 Some games use one input/function to select a piece and highlight all possible destinations, and then a second input is to actually move the piece.
+
+### Plans/Todo
+
+- Bitmaps for replacing the display characters with simple images
+- Full web/desktop app
+- Game list UI
+- Puzzle game levels/difficulty
+- Timer
+- Multiplayer move verification
+- Terminal multiplayer
+- Actual online multiplayer
+- AI players?
+- Game saving?
+- Sound effects?
+
+### Potential games to add
+
+- Sudoku
+- Pipe flow puzzle
+- Mastermind
+- Go
+- Stratego
+- Matching
+- Maze
+- Dungeon crawler

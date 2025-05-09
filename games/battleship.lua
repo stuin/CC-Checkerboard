@@ -7,8 +7,8 @@ local battleship = {
 		{name='Red', color=colors.red, hit=0, placing=1, rotate=false},
 		{name='Blue', color=colors.blue, hit=0, placing=1, rotate=false}
 	},
-	width=9,
-	height=19,
+	width=19,
+	height=9,
 	edgeColor=colors.lightBlue,
 	gridColor=colors.black,
 	titleColor=colors.blue
@@ -24,12 +24,12 @@ local ships = {
 
 local function shoot(game, x,y)
 	local pOther = (game.turn % #game.players) + 1
-	if game.board[x][y+10][5][pOther] ~= nil then
-		game.board[x][y+10][5][pOther] = {'*', nil, colors.red, colors.gray}
+	if game.board[x+10][y][5][pOther] ~= nil then
+		game.board[x+10][y][5][pOther] = {'*', nil, colors.red, colors.gray}
 		game.board[x][y][5][game.turn] = {'*', nullFunc, colors.red, colors.gray}
 		game.players[game.turn].hit = game.players[game.turn].hit + 1
 	else
-		game.board[x][y+10][5][pOther] = {'*', nil, colors.white, colors.blue}
+		game.board[x+10][y][5][pOther] = {'*', nil, colors.white, colors.blue}
 		game.board[x][y][5][game.turn] = {'*', nullFunc, colors.white, colors.blue}
 	end
 
@@ -41,15 +41,15 @@ local function shoot(game, x,y)
 end
 
 local function mirror(game,x,y)
-	if game.board[x][y-10][5][game.turn] == nil then
-		game.board[x][y-10][2](game,x,y-10)
+	if game.board[x-10][y][5][game.turn] == nil then
+		game.board[x-10][y][2](game,x-10,y)
 	end
 end
 
 local function playSetup(game,x,y)
-	if y < 10 then
+	if x < 10 then
 		return {'~', shoot, colors.black, colors.blue, {nil, nil}}
-	elseif y > 10 then
+	elseif x > 10 then
 		game.board[x][y][2] = mirror
 		return game.board[x][y]
 	else
@@ -114,10 +114,22 @@ local function place(game, x,y)
 	local p = game.players[game.turn]
 	if p.rotate and onBoard(x,y+ships[p.placing][3]-1) then
 		for i=1,ships[p.placing][3] do
+			if game.board[x][y+i-1][5][game.turn] ~= nil then
+				return
+			end
+		end
+
+		for i=1,ships[p.placing][3] do
 			game.board[x][y+i-1][5][game.turn] = {ships[p.placing][2], nil, colors.white, colors.gray}
 		end
 		nextShip(game, x,y)
-	elseif onBoard(x+ships[p.placing][3]-1, y) then
+	elseif not p.rotate and onBoard(x+ships[p.placing][3]-1, y) then
+		for i=1,ships[p.placing][3] do
+			if game.board[x+i-1][y][5][game.turn] ~= nil then
+				return
+			end
+		end
+
 		for i=1,ships[p.placing][3] do
 			game.board[x+i-1][y][5][game.turn] = {ships[p.placing][2], nil, colors.white, colors.gray}
 		end
@@ -127,11 +139,12 @@ end
 
 --Setup starting pieces and empty spaces
 function battleship.setupFunc(game, x,y)
-	if y == 10 then
-		return {string.char(96+x), nullFunc, game.gridColor, game.edgeColor}
+	if x == 10 then
+		--return {string.char(96+x), nullFunc, game.gridColor, game.edgeColor}
+		return {y, nullFunc, game.gridColor, game.edgeColor}
 	elseif y == 1 and x < 6 then
 		return {'~', nullFunc, colors.black, colors.blue, {{'C', rotate, colors.white, colors.gray}, nil}}
-	elseif y > 10 then
+	elseif x > 10 then
 		return {'~', place, colors.black, colors.blue, {nil, nil}}
 	else
 		return {'~', nullFunc, colors.black, colors.blue, {nil, nil}}
