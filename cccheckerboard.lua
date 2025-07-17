@@ -15,6 +15,7 @@ local gameFormat = {
 --Everything below this line is setup automatically
 	turn="Current player index",
 	playing="Is Game Running?",
+	spectators="Number of extra non-playing screens",
 	seed="Random number seed",
 	board={{{
 		"Text Character",
@@ -36,17 +37,27 @@ if term == nil then
 	require 'ansi-term'
 end
 
---Variables for drawing
+--Screen
 local screenX,screenY = term.getSize()
 local centerX,centerY = screenX/2,screenY/2
-local startX,startY = 1,1
-local gridX,gridY = 0,0
 local monitor = nil
 
---Variables for multiplayer
+--Grid
+local startX,startY = 1,1
+local gridX,gridY = 0,0
+
+--UI Layout
+local centered = false
+local restartX = screenX
+local restartY = 4
+local quitX = screenX
+local quitY = 5
+
+--Multiplayer config
 local playerNum = 0
 local boardLayer = 0
 
+--Networking
 local modem = nil
 local connections = {}
 local baseProtocolName = "CCCheckerboard-"..cccheckerboardVersion
@@ -92,17 +103,12 @@ local function drawGrid(game)
 	term.setBackgroundColor(colors.black)
 end
 
-local centered = false
-local restartX = screenX
-local restartY = 4
-local quitX = screenX
-local quitY = 5
-
+--Center or right justify text
 local function textX(width)
 	if centered then
 		return centerX-(width/2)
 	else
-		return screenX-width
+		return screenX-width+1
 	end
 end
 
@@ -121,7 +127,7 @@ local function drawHeader(game)
 	if game.turn > 0 and game.turn <= #game.players then
 		local name = game.players[game.turn].name
 		term.setTextColor(game.players[game.turn].color)
-		term.setCursorPos(textX(#name+9), 2)
+		term.setCursorPos(textX(#name+8), 2)
 		if playerNum ~= 0 and game.turn == playerNum then
 			term.setBackgroundColor(colors.green)
 		elseif playerNum ~= 0 and game.turn ~= playerNum then
@@ -284,71 +290,88 @@ local function setupNetwork(game, modemW)
 	print(protocolName)
 	modem = peripheral.getName(modemW)
 	rednet.open(modem)
-	rednet.unhost(protocolName)
+	rednet.broadcast("Searching", protocolName)
+	local timeout = 10
 
-	local other = rednet.lookup(protocolName)
-	if other ~= nil then
-		--Join as secondary player
-		print("Found host")
-		if type(other) == "table" then
-			other = other[1]
-		end
-		rednet.send(other, "Join", protocolName)
-		local id, message = rednet.receive(protocolName)
-		connections = message
-		playerNum = #connections
-		print("Joined as player "..playerNum)
-		id, message = rednet.receive(protocolName)
-		print("All players found, starting game")
-	else
-		--Start as host
-		print("Waiting for players")
-		playerNum = 1
-		connections[1] = os.getComputerID()
-		rednet.host(protocolName, ""..os.getComputerID())
-
-		--Wait for all players
-		for i=2,#game.players do
-			local id, message = rednet.receive(protocolName, 10+os.getComputerID())
-			while id == nil do
-				rednet.unhost(protocolName)
-				other = rednet.lookup(protocolName)
-
-				--Try other host
-				if i==2 and other ~= nil then
-					print("Found other host to try")
-					rednet.send(other, "Join", protocolName)
-				else
-					rednet.host(protocolName, ""..os.getComputerID())
+	while playerNum == 0 and timeout > 0 do
+		local id, message = rednet.receive(protocolName, 3+os.getComputerID())
+		timeout = timeout - 1
+		if message == "Searching" then
+			--Join as secondary player
+			print("Found host")
+			os.sleep(1)
+			rednet.send(id, "Join", protocolName)
+			id, message = rednet.receive(protocolName, 3+os.getComputerID())
+			if message == "Searching" then
+				rednet.close(modem)
+				os.sleep(2)
+				rednet.open(modem)
+				rednet.send(id, "Join", protocolName)
+				id, message = rednet.receive(protocolName, 3+os.getComputerID())
+				if message == "Searching" then
+					print("Searching")
+					rednet.broadcast("Searching", protocolName)
 				end
-				id, message = rednet.receive(protocolName, os.getComputerID())
 			end
-
-			if message == "Join" then
-				--Allow player to join as host
-				connections[i] = id
-				print("Found player "..i)
-				rednet.send(id, connections, protocolName)
-			else
-				--Swap to being secondary player
-				rednet.unhost(protocolName)
+			if id ~= nil and message ~= "Join" and message ~= "Searching" then
 				connections = message
 				playerNum = #connections
 				print("Joined as player "..playerNum)
 				id, message = rednet.receive(protocolName)
 				print("All players found, starting game")
+			elseif message == "Join" then
+				print(os.getComputerID(), id)
 			end
-		end
+		elseif message == "Join" then
+			--Start as host
+			print("Becoming host")
+			playerNum = 1
+			connections[1] = os.getComputerID()
 
-		--Confirm to all players
-		if playerNum == 1 then
-			rednet.unhost(protocolName)
-			for i=2,#connections do
-				rednet.send(connections[i], connections, protocolName)
+			--Allow player to join
+			connections[2] = id
+			print("Found player "..2)
+			rednet.send(id, connections, protocolName)
+
+			--Wait for all players
+			if #game.players + game.spectators > 2 then
+				rednet.broadcast("Searching", protocolName)
+				for i=3,(#game.players + game.spectators) do
+					id, message = rednet.receive(protocolName, 3+os.getComputerID())
+					if id ~= nil and message == "Join" and connections[2] ~= id then
+						connections[i] = id
+						print("Found player "..i)
+						rednet.send(id, connections, protocolName)
+					else
+						rednet.broadcast("Searching", protocolName)
+					end
+				end
 			end
+		else
+			print("Searching")
+			if timeout % 3 == 0 then
+				rednet.close(modem)
+				os.sleep(2)
+				rednet.open(modem)
+			end
+			rednet.broadcast("Searching", protocolName)
 		end
-		print("All players found, starting game")
 	end
+
+	if playerNum == 0 then
+		print("Timeout while searching for players")
+		rednet.close(modem)
+		return false
+	end
+
+	--Confirm to all players
+	if playerNum == 1 then
+		for i=2,#connections do
+			rednet.send(connections[i], connections, protocolName)
+		end
+	end
+	print("All players found, starting game")
+	return true
 end
 
 --Clear game and board to start
@@ -436,14 +459,17 @@ function startGame(game)
 		list_game[#list_game + 1] = game
 		return
 	end
+	game.spectators = 0
 
 	--Check command arguments
 	for i=1,#arg do
-		if arg[i] == "-m" and #game.players > 1 then
+		if arg[i] == "-m" and #game.players+game.spectators > 1 then
 			--Enable modem multiplayer
 			local modem = peripheral.find("modem")
 			if modem ~= nil then
-				setupNetwork(game, modem)
+				if not setupNetwork(game, modem) then
+					return
+				end
 			else
 				print("No modem found for remote multiplayer")
 				return
@@ -459,6 +485,16 @@ function startGame(game)
 				game.height = game.height + (s - game.width)
 				game.width = s
 				print("Set size to "..s)
+			end
+		elseif arg[i] == "-p" and i < #arg then
+			--Add spectators or disable players
+			local p = tonumber(arg[i + 1])
+			if p > #game.players then
+				game.spectators = p-#game.players
+			else
+				for j=p+1,#game.players do
+					game.players[j] = nil
+				end
 			end
 		elseif arg[i] == "-c" then
 			centered = true

@@ -20,6 +20,8 @@ A lua library for creating small text grid turn based games for the ComputerCraf
 	- The computer will wait until there are as many computers connected as players in the game
 	- All computers will display the board, only the current player can select a cell
 	- Any player can restart or quit the game for everyone
+	- Use `-p #` to limit the number of players in the game
+	- Use `-p # -m` with a larger number to allow extra spectator screens
 - By default, board is on left edge and text options are on right
 - Add `-c` to args to center board and text
 - All colors are customizable
@@ -29,6 +31,7 @@ A lua library for creating small text grid turn based games for the ComputerCraf
 - Random board generation can happen at game start or during the game
 - Supports a unique hidden board for each player (ex: battleship)
 - Add `-u` to args to install updates from git
+- `gamelist` for a list of playable games, with mouse or keyboard selection
 - `gamelist -m` to wait for any multiplayer game and join
 - Multiple example games:
 	- Tic Tac Toe
